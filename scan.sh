@@ -47,4 +47,4 @@ nmap -Pn -sV --version-light \
   -oX "$WORK/scan.xml" \
   "$TARGET" > "$WORK/scan.txt"
 
-python3 lab/nginx2root/report.py "$WORK/scan.xml" - --full "$WORK/scan.txt"
+python3 lab/report.py "$WORK/scan.xml" - --full "$WORK/scan.txt"

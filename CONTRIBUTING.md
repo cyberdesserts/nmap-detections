@@ -15,8 +15,15 @@ intended to trigger the flaw, will not be merged. Keep `categories` as
 
 Before opening a pull request (needs Docker, Nmap and python3):
 
-1. Run the lab: `cd lab/nginx2root && ./gen-cert.sh && docker compose up -d && ./run-tests.sh`
-2. `run-tests.sh` exits non-zero if any case does not match `cases.tsv`. It must exit zero.
+1. Start the lab and run the checks, from the repository root:
+
+   ```sh
+   cd lab/nginx2root && ./gen-cert.sh && docker compose up -d && cd -
+   lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
+   ```
+
+2. `lab/run-tests.sh` exits non-zero if any case does not match its cases file. It must exit zero.
+   A third argument writes a full report to that path, which is what goes in `tests/` when recording a run.
 3. If you change what a case should report, change `cases.tsv` and
    `lab/nginx2root/README.md` together, and say why in the pull request.
 4. `docker compose down` when you are finished.

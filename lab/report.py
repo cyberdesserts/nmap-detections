@@ -23,20 +23,30 @@ def rule(ch="="):
 
 
 def read_cases(path):
-    cases = []
+    """Returns (cases, cve_columns). The last commented line before the rows is
+    the header; every column whose name starts with CVE- is a verdict column."""
+    cases, header = [], None
     with open(path, encoding="utf-8") as fh:
         for line in fh:
-            if line.startswith("#") or not line.strip():
+            if line.startswith("#"):
+                header = line.lstrip("#").rstrip("\n").split("\t")
+                continue
+            if not line.strip():
                 continue
             parts = line.rstrip("\n").split("\t")
-            if len(parts) < 6:
-                continue
-            cases.append({
-                "case": parts[0], "port": parts[1], "nginx": parts[2],
-                "config": parts[3], "CVE-2026-123007": parts[4],
-                "CVE-2026-123633": parts[5],
-            })
-    return cases
+            if header and len(parts) == len(header):
+                cases.append(dict(zip(header, parts)))
+    if not header:
+        return [], []
+    cves = [c for c in header if c.startswith("CVE-")]
+    # the first four columns are case, port, version and config, whatever the
+    # header calls them; alias them so the rest of this file can rely on it
+    out = []
+    for row in cases:
+        vals = list(row.values())
+        out.append(dict(row, case=vals[0], port=vals[1],
+                        nginx=vals[2], config=vals[3]))
+    return out, cves
 
 
 def normalise(state):
@@ -109,11 +119,16 @@ def main():
             full_path = args[i + 1]
 
     findings_only = cases_path == "-"
-    cases = [] if findings_only else read_cases(cases_path)
+    cases, cves = ([], []) if findings_only else read_cases(cases_path)
     scan, root = read_scan(xml_path)
-    cves = ["CVE-2026-123007", "CVE-2026-123633"]
-    here = os.path.dirname(os.path.abspath(__file__))
-    script = os.path.join(here, "..", "..", "nse", "http-vuln-cve2026-123007.nse")
+    if findings_only:
+        # no cases file: report every CVE the scan returned
+        seen = []
+        for p in scan:
+            for c in scan[p]["states"]:
+                if c not in seen:
+                    seen.append(c)
+        cves = sorted(seen)
 
     print(rule())
     print("nginx2root scan results" if findings_only else "nginx2root lab results")
@@ -129,7 +144,6 @@ def main():
                 if "=" in line:
                     k, v = line.rstrip("\n").split("=", 1)
                     print("  %-22s %s" % (k, v))
-    print("  %-22s %s" % ("Script sha256", sha256(script)))
     args_line = root.get("args") or ""
     # drop the -oX temp path: it is scaffolding, not part of the record
     args_line = re.sub(r"\s-oX\s+\S+", "", args_line)
@@ -194,7 +208,7 @@ def main():
             if actual != expected:
                 ok = False
                 mismatches.append((c["case"], c["port"], cve, expected, actual))
-            if cve == "CVE-2026-123633" and actual.startswith("LIKELY"):
+            if c.get(cve, "").startswith("UNKNOWN") and actual.startswith("LIKELY"):
                 likely_123633 += 1
         row.append("yes" if ok else "NO")
         rows.append(row)
@@ -209,9 +223,8 @@ def main():
     print("SUMMARY")
     matched = sum(1 for r in rows if r[-1] == "yes")
     print("  %d of %d cases matched the expected results." % (matched, len(rows)))
-    print("  CVE-2026-123633 reported LIKELY VULNERABLE: %d times." % likely_123633)
-    if likely_123633 == 0:
-        print("  Invariant holds: CVE-2026-123633 is never reported LIKELY VULNERABLE.")
+    if likely_123633:
+        print("  %d case(s) returned LIKELY VULNERABLE where UNKNOWN was expected." % likely_123633)
     if mismatches:
         print()
         print("  MISMATCHES")

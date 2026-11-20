@@ -2,13 +2,14 @@
 
 Nine NGINX containers, one per test case for `nse/http-vuln-cve2026-123007.nse`. Ports bind to 127.0.0.1 only. Every container on an affected version is deliberately vulnerable, so keep it off any network you do not control.
 
-Needs Docker, Nmap and python3. `run-tests.sh` compares every case against `cases.tsv` and exits non-zero if any one does not match.
+Needs Docker, Nmap and python3. `lab/run-tests.sh` compares every case against `cases.tsv` and exits non-zero if any one does not match.
+
+Run from the repository root:
 
 ```sh
-./gen-cert.sh
-docker compose up -d
-./run-tests.sh
-docker compose down
+cd lab/nginx2root && ./gen-cert.sh && docker compose up -d && cd -
+lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
+cd lab/nginx2root && docker compose down
 ```
 
 If an image tag is missing from Docker Hub, build that version from the official source tarball at nginx.org and change `image:` in `docker-compose.yml`.

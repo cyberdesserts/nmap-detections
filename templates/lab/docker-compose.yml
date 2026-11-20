@@ -1,0 +1,36 @@
+# Lab skeleton: one container per result the check can return.
+# Binds to 127.0.0.1 only. Containers on affected versions are deliberately
+# vulnerable: do not expose these ports to a network.
+#
+# As shipped this is filled in with nginx2root on cleartext ports, so it runs
+# without certificates. For a new CVE, change the images to the product's
+# vulnerable and fixed builds and the configs to switch the condition on and
+# off. Keep cases.tsv in step with this file.
+
+x-case: &case
+  restart: "no"
+
+services:
+  vuln-on:    # affected version, condition present  -> LIKELY VULNERABLE
+    <<: *case
+    image: nginx:1.31.8
+    ports: ["127.0.0.1:18081:80"]
+    volumes: ["./conf/condition-on.conf:/etc/nginx/conf.d/default.conf:ro"]
+
+  vuln-off:   # affected version, condition absent   -> NOT VULNERABLE
+    <<: *case
+    image: nginx:1.31.8
+    ports: ["127.0.0.1:18082:80"]
+    volumes: ["./conf/condition-off.conf:/etc/nginx/conf.d/default.conf:ro"]
+
+  fixed-on:   # fixed version, condition present     -> NOT VULNERABLE
+    <<: *case
+    image: nginx:1.31.9
+    ports: ["127.0.0.1:18083:80"]
+    volumes: ["./conf/condition-on.conf:/etc/nginx/conf.d/default.conf:ro"]
+
+  hidden-on:  # version hidden, condition present    -> UNKNOWN
+    <<: *case
+    image: nginx:1.31.8
+    ports: ["127.0.0.1:18084:80"]
+    volumes: ["./conf/hidden-on.conf:/etc/nginx/conf.d/default.conf:ro"]

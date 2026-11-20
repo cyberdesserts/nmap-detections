@@ -1,0 +1,7 @@
+# Expected results for templates/lab/docker-compose.yml. Tab separated.
+# Header line names the columns; every column starting CVE- is checked.
+#case	port	version	config	CVE-2026-123007	CVE-2026-123633
+vuln-on	18081	1.31.8	cleartext, http2 on	LIKELY VULNERABLE	UNKNOWN
+vuln-off	18082	1.31.8	cleartext, http2 off	NOT VULNERABLE	NOT VULNERABLE
+fixed-on	18083	1.31.9	cleartext, http2 on	NOT VULNERABLE	NOT VULNERABLE
+hidden-on	18084	1.31.8	cleartext, http2 on, server_tokens off	UNKNOWN	UNKNOWN

@@ -32,9 +32,8 @@ jobs:
           docker compose up -d
           docker compose ps
 
-      - name: Run the checks
-        working-directory: lab/nginx2root
-        run: ./run-tests.sh
+      - name: Run the checks against the nginx2root lab
+        run: lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
 
       - name: Stop the lab
         if: always()
