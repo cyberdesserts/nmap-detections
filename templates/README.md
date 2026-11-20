@@ -68,4 +68,8 @@ cd templates/lab && docker compose up -d && cd -
 lab/run-tests.sh templates/http-vuln-version-condition.nse templates/lab/cases.tsv
 ```
 
+Both runs, and the published check against the nginx2root lab, run in CI on
+every push. If the template drifts away from the check it is modelled on, the
+build fails.
+
 Scan only systems you own or are authorised to test.

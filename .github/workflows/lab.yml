@@ -1,6 +1,10 @@
 name: lab
 
-# Runs the nginx2root lab and fails if any case does not match cases.tsv.
+# Runs every check against every lab and fails if any case does not match its
+# cases file. Three things are proved:
+#   1. the published check still passes the nginx2root lab
+#   2. the template still agrees with the published check on that same lab
+#   3. the template still passes its own four-case skeleton
 on:
   push:
     branches: [main]
@@ -8,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-lab:
+  run-labs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +23,7 @@ jobs:
       - name: Record versions
         run: |
           nmap --version | head -1
+          python3 --version
           docker --version
           docker compose version
 
@@ -26,16 +31,33 @@ jobs:
         working-directory: lab/nginx2root
         run: ./gen-cert.sh
 
-      - name: Start the lab
+      - name: Start the nginx2root lab
         working-directory: lab/nginx2root
         run: |
           docker compose up -d
           docker compose ps
 
-      - name: Run the checks against the nginx2root lab
+      - name: Check the script against the nginx2root lab
         run: lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
 
-      - name: Stop the lab
+      - name: Check the template against the nginx2root lab
+        run: lab/run-tests.sh templates/http-vuln-version-condition.nse lab/nginx2root/cases.tsv
+
+      - name: Stop the nginx2root lab
         if: always()
         working-directory: lab/nginx2root
+        run: docker compose down
+
+      - name: Start the template lab
+        working-directory: templates/lab
+        run: |
+          docker compose up -d
+          docker compose ps
+
+      - name: Check the template against its own lab
+        run: lab/run-tests.sh templates/http-vuln-version-condition.nse templates/lab/cases.tsv
+
+      - name: Stop the template lab
+        if: always()
+        working-directory: templates/lab
         run: docker compose down
