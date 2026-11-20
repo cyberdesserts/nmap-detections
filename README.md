@@ -61,15 +61,18 @@ port, the default with HTTP/2 off and `app.example.com` with it on:
 
 Same address, same port, opposite answers. The scan by IP missed the exposed
 site. Scan each hostname you serve, or pass `tls.servername` when you have to
-work from an address.
+work from an address. This is case 10 in the lab, and CI checks it on every
+push.
 
 ### Why `-Pn`
 
 `-Pn` skips host discovery and scans the port regardless. Without it Nmap
 probes the host first and reports "Host seems down" if those probes are
 filtered, which is common on hardened and internet-facing servers. Against a
-host that does answer it changes nothing and costs nothing: the same result in
-the same time, measured on the lab. `scan.sh` passes it for you.
+host that does answer it changes nothing: `lab/check-pn.sh` scans the lab both
+ways and compares every result, and CI runs it on every push. It costs nothing
+either, the same time to within a tenth of a second over three runs each way,
+though that is a measurement rather than a test. `scan.sh` passes it for you.
 
 ## Checks
 

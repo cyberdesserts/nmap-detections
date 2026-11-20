@@ -14,6 +14,10 @@
 #   lab/run-tests.sh nse/my-new-check.nse lab/my-new-lab/cases.tsv
 #   lab/run-tests.sh templates/http-vuln-version-condition.nse templates/lab/cases.tsv
 #
+# If the cases file has an "args" column, rows are grouped by its value and
+# scanned once per group, so the same port can be tested with and without
+# extra --script-args. Rows with no args are scanned plainly.
+#
 # Exits non-zero if any case does not match. Needs Nmap and python3.
 set -e
 SCRIPT=$1
@@ -24,16 +28,42 @@ for tool in nmap python3; do
   command -v "$tool" >/dev/null 2>&1 || { echo "$tool not found" >&2; exit 1; }
 done
 
-PORTS=$(grep -v '^#' "$CASES" | awk -F'\t' 'NF>1 {print $2}' | paste -sd, -)
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 nmap --version | head -1
-echo "Scanning ports $PORTS on 127.0.0.1 with $SCRIPT"
-# -sV so the HTTP port rule matches non-standard lab ports.
-nmap -Pn -n -sT -sV --version-light -p "$PORTS" \
-  --script "$SCRIPT" --script-args vulns.showall \
-  -oX "$WORK/scan.xml" 127.0.0.1 > "$WORK/scan.txt"
+
+# Which column holds the extra arguments, if any.
+ARGCOL=$(awk -F'\t' '/^#case/ {for(i=1;i<=NF;i++) if($i=="args") print i; exit}' "$CASES")
+
+# One scan per distinct args value. Empty args first, so the plain scan leads.
+if [ -n "$ARGCOL" ]; then
+  awk -F'\t' -v c="$ARGCOL" '!/^#/ && NF>1 {print ($c=="" ? "-" : $c)}' "$CASES" | sort -u > "$WORK/groups"
+else
+  echo "-" > "$WORK/groups"
+fi
+
+: > "$WORK/manifest.tsv"
+N=0
+# read line by line: an args value may contain commas, so never word split
+while IFS= read -r GROUP; do
+  [ -n "$GROUP" ] || continue
+  N=$((N + 1))
+  if [ "$GROUP" = "-" ]; then
+    EXTRA=""
+    PORTS=$(awk -F'\t' -v c="$ARGCOL" '!/^#/ && NF>1 {if (c=="" || $c=="") print $2}' "$CASES" | sort -un | paste -sd, -)
+  else
+    EXTRA=",$GROUP"
+    PORTS=$(awk -F'\t' -v c="$ARGCOL" -v g="$GROUP" '!/^#/ && NF>1 && $c==g {print $2}' "$CASES" | sort -un | paste -sd, -)
+  fi
+  [ -n "$PORTS" ] || continue
+  echo "Scanning ports $PORTS on 127.0.0.1 with $SCRIPT${EXTRA:+ (args: $GROUP)}"
+  # -sV so the HTTP port rule matches non-standard lab ports.
+  nmap -Pn -n -sT -sV --version-light -p "$PORTS" \
+    --script "$SCRIPT" --script-args "vulns.showall$EXTRA" \
+    -oX "$WORK/scan-$N.xml" 127.0.0.1 > "$WORK/scan-$N.txt"
+  printf '%s\t%s\n' "$WORK/scan-$N.xml" "$([ "$GROUP" = "-" ] && echo "" || echo "$GROUP")" >> "$WORK/manifest.tsv"
+done < "$WORK/groups"
 
 if [ -n "$REPORT" ]; then
   {
@@ -47,9 +77,16 @@ if [ -n "$REPORT" ]; then
     fi
     printf 'Cases=%s\n' "$CASES"
   } > "$WORK/env.txt"
-  python3 "$(dirname "$0")/report.py" "$WORK/scan.xml" "$CASES" \
-    --env "$WORK/env.txt" --full "$WORK/scan.txt" > "$REPORT" || true
+  cat "$WORK"/scan-*.txt > "$WORK/scan-all.txt"
+  # exit 1 means a case mismatched, which check.py reports below; anything
+  # else is a real failure and must not be swallowed
+  python3 "$(dirname "$0")/report.py" "$WORK/manifest.tsv" "$CASES" \
+    --env "$WORK/env.txt" --full "$WORK/scan-all.txt" > "$REPORT" || RC=$?
+  if [ "${RC:-0}" -gt 1 ]; then
+    echo "report.py failed with exit ${RC}" >&2
+    exit "$RC"
+  fi
   echo "Report written to $REPORT"
 fi
 
-python3 "$(dirname "$0")/check.py" "$WORK/scan.xml" "$CASES"
+python3 "$(dirname "$0")/check.py" "$CASES" "$WORK/manifest.tsv"

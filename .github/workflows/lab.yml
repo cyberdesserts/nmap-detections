@@ -1,10 +1,11 @@
 name: lab
 
 # Runs every check against every lab and fails if any case does not match its
-# cases file. Three things are proved:
+# cases file. Four things are proved:
 #   1. the published check still passes the nginx2root lab
-#   2. the template still agrees with the published check on that same lab
-#   3. the template still passes its own four-case skeleton
+#   2. -Pn changes no result, which the README's advice rests on
+#   3. the template still agrees with the published check on that same lab
+#   4. the template still passes its own four-case skeleton
 on:
   push:
     branches: [main]
@@ -39,6 +40,9 @@ jobs:
 
       - name: Check the script against the nginx2root lab
         run: lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
+
+      - name: Check that -Pn changes no result
+        run: lab/check-pn.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
 
       - name: Check the template against the nginx2root lab
         run: lab/run-tests.sh templates/http-vuln-version-condition.nse lab/nginx2root/cases.tsv

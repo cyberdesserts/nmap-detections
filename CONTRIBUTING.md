@@ -24,9 +24,19 @@ Before opening a pull request (needs Docker, Nmap and python3):
 
 2. `lab/run-tests.sh` exits non-zero if any case does not match its cases file. It must exit zero.
    A third argument writes a full report to that path, which is what goes in `tests/` when recording a run.
-3. If you change what a case should report, change `cases.tsv` and
+3. Check that `-Pn` changes nothing, which the README's advice rests on:
+
+   ```sh
+   lab/check-pn.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
+   ```
+
+4. If you change what a case should report, change `cases.tsv` and
    `lab/nginx2root/README.md` together, and say why in the pull request.
-4. `docker compose down` when you are finished.
+
+   A cases file may carry an optional last column named `args`, holding extra
+   `--script-args` for that row. Rows are grouped by it and scanned once per
+   group, so one port can be tested with and without arguments.
+5. `docker compose down` when you are finished.
 
 ## Adding a check
 

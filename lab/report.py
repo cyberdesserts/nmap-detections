@@ -34,7 +34,9 @@ def read_cases(path):
             if not line.strip():
                 continue
             parts = line.rstrip("\n").split("\t")
-            if header and len(parts) == len(header):
+            if header:
+                # a row may omit trailing optional columns such as args
+                parts = parts + [""] * (len(header) - len(parts))
                 cases.append(dict(zip(header, parts)))
     if not header:
         return [], []
@@ -52,6 +54,20 @@ def read_cases(path):
 def normalise(state):
     """'UNKNOWN (unable to test)' and 'UNKNOWN' are the same verdict."""
     return (state or "").replace("(unable to test)", "").strip()
+
+
+def read_manifest(path):
+    """A manifest is <scan.xml>\t<args> per line. A bare .xml is one plain scan."""
+    if path.endswith(".xml"):
+        return [(path, "")]
+    scans = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            parts = line.rstrip("\n").split("\t")
+            scans.append((parts[0], parts[1] if len(parts) > 1 else ""))
+    return scans
 
 
 def read_scan(path):
@@ -120,7 +136,15 @@ def main():
 
     findings_only = cases_path == "-"
     cases, cves = ([], []) if findings_only else read_cases(cases_path)
-    scan, root = read_scan(xml_path)
+    scans = read_manifest(xml_path)
+    scan, root = read_scan(scans[0][0])
+    # states keyed by the arguments the scan used, so one port can appear twice
+    by_args = {}
+    for xp, args in scans:
+        part, _ = read_scan(xp)
+        by_args[args] = part
+        for p, entry in part.items():
+            scan.setdefault(p, entry)
     if findings_only:
         # no cases file: report every CVE the scan returned
         seen = []
@@ -195,11 +219,15 @@ def main():
                 sys.stdout.write(fh.read())
         return 0
 
+    show_args = any(c.get("args") for c in cases)
     rows, mismatches = [], []
     likely_123633 = 0
     for c in cases:
-        got = scan.get(c["port"], {}).get("states", {})
+        args = c.get("args", "")
+        got = by_args.get(args, {}).get(c["port"], {}).get("states", {})
         row = [c["case"], c["port"], c["nginx"], c["config"]]
+        if show_args:
+            row.append(args or "none")
         ok = True
         for cve in cves:
             expected = c[cve]
@@ -213,9 +241,12 @@ def main():
         row.append("yes" if ok else "NO")
         rows.append(row)
 
-    headers = ["case", "port", "nginx", "config",
-               "expect 123007", "actual 123007",
-               "expect 123633", "actual 123633", "match"]
+    headers = ["case", "port", "nginx", "config"]
+    if show_args:
+        headers.append("scan args")
+    for cve in cves:
+        headers += ["expect " + cve[-6:], "actual " + cve[-6:]]
+    headers.append("match")
     print("RESULTS")
     print(render_table(headers, rows))
     print()
