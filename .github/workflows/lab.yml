@@ -1,0 +1,42 @@
+name: lab
+
+# Runs the nginx2root lab and fails if any case does not match cases.tsv.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nmap
+        run: sudo apt-get update && sudo apt-get install -y nmap
+
+      - name: Record versions
+        run: |
+          nmap --version | head -1
+          docker --version
+          docker compose version
+
+      - name: Generate the lab certificate
+        working-directory: lab/nginx2root
+        run: ./gen-cert.sh
+
+      - name: Start the lab
+        working-directory: lab/nginx2root
+        run: |
+          docker compose up -d
+          docker compose ps
+
+      - name: Run the checks
+        working-directory: lab/nginx2root
+        run: ./run-tests.sh
+
+      - name: Stop the lab
+        if: always()
+        working-directory: lab/nginx2root
+        run: docker compose down
