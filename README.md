@@ -142,7 +142,7 @@ Patching needs a full restart of NGINX. A configuration reload leaves the vulner
 
 ### Testing
 
-[`lab/nginx2root`](lab/nginx2root) runs nine NGINX containers covering each branch of the table above. Results are kept in [`tests/`](tests).
+[`lab/nginx2root`](lab/nginx2root) runs ten NGINX containers covering each branch of the table above, in eleven cases. Results are kept in [`tests/`](tests).
 
 ## Licence
 

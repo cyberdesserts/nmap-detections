@@ -2,7 +2,7 @@
 
 ## Results from builds the lab does not cover
 
-The most useful contribution. The lab covers nine cases on four NGINX versions.
+The most useful contribution. The lab covers eleven cases on four NGINX versions.
 Results from other builds, other distributions or NGINX behind a front end are
 welcome as issues. Include the Nmap version, the NGINX version, how the port is
 configured, and what the check reported.

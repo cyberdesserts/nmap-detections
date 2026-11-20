@@ -1,6 +1,10 @@
 # Test results
 
-All results here are from **Nmap 7.993** (Homebrew, arm64) on macOS, against the nine NGINX containers in `lab/nginx2root`, every port bound to 127.0.0.1. Docker 29.8.0, Docker Compose v5.5.1. Run date: 20 November 2026.
+All results here are from **Nmap 7.993** (Homebrew, arm64) on macOS, against the ten NGINX containers in `lab/nginx2root`, every port bound to 127.0.0.1. Docker 29.8.0, Docker Compose v5.5.1. Run date: 20 November 2026.
+
+Eleven cases over ten containers: case 10 serves two virtual hosts from one container and is scanned twice, once by address and once with a server name.
+
+The same checks run in GitHub Actions on every push, on Ubuntu with the Nmap the distribution ships, currently 7.98. A second Nmap version and a second platform reach the same results.
 
 Raw output: `lab-run-2026-11-20-run4-raw.txt`.
 
@@ -10,7 +14,7 @@ All four tags are on Docker Hub. Each was checked with `nginx -v` inside the ima
 
 | Tag | Cases |
 |---|---|
-| `nginx:1.31.8` | 1, 3, 4, 7, 8, 9 |
+| `nginx:1.31.8` | 1, 3, 4, 7, 8, 9, 10 |
 | `nginx:1.31.9` | 2 |
 | `nginx:1.30.6` | 5 |
 | `nginx:1.30.7` | 6 |
@@ -30,8 +34,10 @@ The 1.31.8 image is built with `--with-http_ssl_module`, `--with-http_v2_module`
 | 7 | 8080 | 1.31.8 | Cleartext, `http2 on` | LIKELY VULNERABLE | LIKELY VULNERABLE | UNKNOWN | UNKNOWN | Yes |
 | 8 | 8448 | 1.31.8 | TLS, ECDHE AEAD ciphers only | LIKELY VULNERABLE | LIKELY VULNERABLE | UNKNOWN | UNKNOWN | Yes |
 | 9 | 8449 | 1.31.8 | TLS 1.3 only | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | Yes |
+| 10a | 8450 | 1.31.8 | Two vhosts, scanned by address | NOT VULNERABLE | NOT VULNERABLE | NOT VULNERABLE | NOT VULNERABLE | Yes |
+| 10b | 8450 | 1.31.8 | Two vhosts, `tls.servername=app.example.com` | LIKELY VULNERABLE | LIKELY VULNERABLE | UNKNOWN | UNKNOWN | Yes |
 
-All nine matched. CVE-2026-123633 was reported LIKELY VULNERABLE zero times, because two of its conditions cannot be seen from the network (see below).
+All eleven matched. CVE-2026-123633 was reported LIKELY VULNERABLE zero times, because two of its conditions cannot be seen from the network (see below).
 
 Detection-only properties checked against the script used: categories `{"vuln", "safe"}`; the only traffic is one HTTP GET, one TLS ClientHello, or the HTTP/2 connection preface with an empty SETTINGS frame. It compiles under `luac -p`.
 
@@ -41,6 +47,7 @@ Detection-only properties checked against the script used: categories `{"vuln", 
 - **Case 7.** With `listen 80` and `http2 on`, NGINX 1.31.8 serves HTTP/1.1 normally (so the `Server` header is readable) and answers an HTTP/2 prior-knowledge preface with a SETTINGS frame on stream 0 (`000018040000000000`). It ignores an `Upgrade: h2c` request and answers HTTP/1.1, so the script uses prior knowledge, not Upgrade.
 - **Case 8** completed the handshake and read `h2` against a server that allows only ECDHE with AEAD ciphers.
 - **Case 9** is TLS 1.3 only and does negotiate `h2`, but the script's TLS 1.2 ClientHello draws a `protocol_version` alert, so ALPN is never seen and the result is UNKNOWN. This is the documented TLS 1.3 limitation.
+- **Case 10** is one container with two server blocks on port 8450: the default with HTTP/2 off, `app.example.com` with it on. `openssl s_client` confirms the ground truth, selecting `http/1.1` with no server name and `h2` with `-servername app.example.com`. The two rows are the same port scanned twice, which is what the `args` column in `cases.tsv` carries. `app.example.com` is a documentation name from RFC 2606 and never resolves; NGINX chooses the server block from the TLS server name extension, so the case needs no DNS and runs unchanged on a CI runner.
 
 ## The banner-only comparison
 
@@ -52,6 +59,21 @@ Case 1 (port 8441) has HTTP/2 on and is in range for CVE-2026-123007. Case 3 (po
 | 8443 | 3 | off | nginx | 1.31.8 | `cpe:/a:igor_sysoev:nginx:1.31.8` |
 
 Diffing the two service records returns no differences. Any check that consumes only product, version and CPE must return the same verdict for both, so it is wrong about one of them. This script separates them because it reads ALPN on the port as well as the banner.
+
+## How a scan is aimed changes the answer
+
+Case 10 is the same failure in a different place. There the two results come from one server, and only the way it was scanned differs:
+
+| How it was scanned | CVE-2026-123007 |
+|---|---|
+| By address, no server name | NOT VULNERABLE |
+| With `tls.servername=app.example.com` | LIKELY VULNERABLE |
+
+HTTP/2 is set per virtual host, and a scan carrying no server name reaches the default one. A scan by address can therefore clear a host whose other names are exposed, however good the check is. Scan each hostname served, or pass `tls.servername` when only an address is available.
+
+## Host discovery
+
+The README tells people to pass `-Pn`, so that Nmap scans the port rather than reporting "Host seems down" when discovery probes are filtered. `lab/check-pn.sh` scans the lab with and without `-Pn` and compares every state: 20 of 20 identical. Timing is not asserted, because it varies by machine and would make a flaky test; measured over three runs each way it was the same to within a tenth of a second.
 
 ## Vendor wording, confirmed at source
 
@@ -75,3 +97,4 @@ Affected ranges in the records: `version 1.31.0, lessThan 1.31.9` and `version 1
 - NGINX Plus, OpenResty, Angie and other forks, which the script skips.
 - Distribution packages with backported fixes, which report an affected upstream version.
 - A 1.30.6 listener with `http2 off`, to pair with case 5 the way case 3 pairs with case 1.
+- A cleartext virtual host case, to pair with case 10. Case 10 selects its server block through the TLS server name extension; the cleartext equivalent is the `Host` header, which the check sends but which has no case of its own.
