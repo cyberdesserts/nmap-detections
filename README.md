@@ -1,8 +1,8 @@
-# cyberdesserts-detections
+# nmap-detections
 
-[![lab](https://github.com/cyberdesserts/cyberdesserts-detections/actions/workflows/lab.yml/badge.svg)](https://github.com/cyberdesserts/cyberdesserts-detections/actions/workflows/lab.yml)
+[![lab](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml/badge.svg)](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml)
 
-Detection checks for newly disclosed vulnerabilities, written and tested by [CyberDesserts](https://blog.cyberdesserts.com/). Each check ships with a reproducible lab and the results it was tested against.
+Nmap NSE checks for newly disclosed vulnerabilities, written and tested by [CyberDesserts](https://blog.cyberdesserts.com/). Each check ships with a reproducible lab and the results it was tested against.
 
 Every check here is **detection only**. None sends an exploit, malformed input or anything intended to trigger the flaw it looks for.
 
@@ -31,7 +31,7 @@ convenience wrapper around option 2.
 beyond Nmap itself, so this works anywhere Nmap runs:
 
 ```sh
-curl -O https://raw.githubusercontent.com/cyberdesserts/cyberdesserts-detections/main/nse/http-vuln-cve2026-123007.nse
+curl -O https://raw.githubusercontent.com/cyberdesserts/nmap-detections/main/nse/http-vuln-cve2026-123007.nse
 
 # standard ports
 nmap -Pn -p 80,443 --script ./http-vuln-cve2026-123007.nse www.example.com

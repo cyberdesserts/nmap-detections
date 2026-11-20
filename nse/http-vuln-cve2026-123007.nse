@@ -76,7 +76,7 @@ Limitations:
 --       Server header. Default: /
 
 author = "Shakel Ahmed (CyberDesserts)"
-license = "MIT. See the LICENSE file in the cyberdesserts-detections repository"
+license = "MIT. See the LICENSE file in the nmap-detections repository"
 categories = {"vuln", "safe"}
 
 portrule = shortport.http
