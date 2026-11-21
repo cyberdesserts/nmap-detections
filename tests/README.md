@@ -85,7 +85,7 @@ CVE-2026-123633, F5's wording:
 
 CVE-2026-123007 names no such conditions, only "configurations that use HTTP/2", which is why the two CVEs are reported differently.
 
-Both records give CVSS 4.0 base 9.2 and CVSS 3.1 base 8.1, both with attack complexity High, and both state that code execution is possible "on systems with Address Space Layout Randomization (ASLR) disabled or when the attacker can bypass ASLR".
+Both records give CVSS 4.0 base 9.2 and CVSS 3.1 base 8.1, each with attack complexity High. Both state that code execution is possible "on systems with Address Space Layout Randomization (ASLR) disabled or when the attacker can bypass ASLR".
 
 Affected ranges in the records: `version 1.31.0, lessThan 1.31.9` and `version 1.30.0, lessThan 1.30.7`, with a floor of 1.9.5 (CVE-2026-123007) or 1.19.7 (CVE-2026-123633). `lessThan` is exclusive, giving 1.31.0 to 1.31.8 and up to 1.30.6, as the script uses.
 

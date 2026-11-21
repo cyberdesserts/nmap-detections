@@ -50,7 +50,10 @@ If the advisory only says "versions before X", the check can only ever be a vers
 
 5. Fix the script, not the expectations, until every case matches. Change an expectation only when the vendor's own data says it was wrong.
 
-Two cases belong in every lab: the affected version with the condition switched off, and the fixed version with it on. Those are the two a version-only check gets wrong.
+Two cases belong in every lab, because between them they pin down both halves of the check:
+
+- **Affected version, condition switched off.** A version-only check flags this host; yours should not. This is the false positive the condition test exists to avoid.
+- **Fixed version, condition switched on.** Both checks clear this host. It proves yours is reading the version too, rather than reporting whenever the condition is present.
 
 ## Testing the template itself
 
