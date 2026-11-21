@@ -21,10 +21,10 @@ Everything here is detection only. A condition probe must observe the condition 
 
 | File | What it is |
 |---|---|
-| `http-vuln-version-condition.nse` | The check template, filled in with the nginx2root values so it can be tested |
-| `lab/docker-compose.yml` | A four-case lab skeleton: affected with the condition on, affected with it off, fixed, version hidden |
-| `lab/conf/` | The NGINX configs the skeleton uses to switch the condition on and off |
-| `lab/cases.tsv` | Expected results for the skeleton, one row per case, one column per CVE |
+| `templates/http-vuln-version-condition.nse` | The check template, filled in with the nginx2root values so it can be tested |
+| `templates/lab/docker-compose.yml` | A four-case lab skeleton: affected with the condition on, affected with it off, fixed, version hidden |
+| `templates/lab/conf/` | The NGINX configs the skeleton uses to switch the condition on and off |
+| `templates/lab/cases.tsv` | Expected results for the skeleton, one row per case, one column per CVE |
 
 The test harness is not here. `lab/run-tests.sh` and `lab/check.py` serve every lab in this repository, including this skeleton.
 
@@ -46,8 +46,8 @@ If the advisory only says "versions before X", the check can only ever be a vers
 ## Workflow
 
 1. Copy `http-vuln-version-condition.nse` to `nse/http-vuln-cveYYYY-NNNNN.nse` and work through the four EDIT blocks.
-2. Copy `lab/` to `lab/<name>/`. Set the images to the product's vulnerable and fixed builds and the configs to switch the condition on and off. Add a case for every result the check can return.
-3. Write the expected state for every case in `cases.tsv` before running anything.
+2. Copy `templates/lab/` to `lab/<name>/`. Set the images to the product's vulnerable and fixed builds and the configs to switch the condition on and off. Add a case for every result the check can return.
+3. Write the expected state for every case in `lab/<name>/cases.tsv` before running anything.
 4. Start the lab and run the check against it:
 
    ```sh
