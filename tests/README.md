@@ -2,7 +2,7 @@
 
 All results here are from **Nmap 7.993** (Homebrew, arm64) on macOS, against the eleven NGINX containers in `lab/nginx2root`, every port bound to 127.0.0.1. Docker 29.8.0, Docker Compose v5.5.1. Run date: 21 November 2026.
 
-Eleven cases over ten containers: case 10 serves two virtual hosts from one container and is scanned twice, once by address and once with a server name.
+Twelve cases over eleven containers: case 10 serves two virtual hosts from one container and is scanned twice, once by address and once with a server name. Case 11 is case 1 with a backend behind it.
 
 The same checks run in GitHub Actions on every push, on Ubuntu with the Nmap that distribution ships, currently 7.98. A second Nmap version on a second platform reaches the same results.
 
