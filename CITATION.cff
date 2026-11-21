@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: nmap-detections
+message: If you use these checks or the lab in your own work, please cite them.
+type: software
+authors:
+  - given-names: Shakel
+    family-names: Ahmed
+    affiliation: CyberDesserts
+repository-code: https://github.com/cyberdesserts/nmap-detections
+url: https://blog.cyberdesserts.com/
+abstract: >-
+  Detection-only Nmap NSE checks for newly disclosed vulnerabilities. Each
+  check ships with a reproducible Docker lab holding a case for every state
+  the check can report, and the recorded results of running it. The first
+  check covers the nginx2root HTTP/2 flaws in NGINX Open Source,
+  CVE-2026-123007 and CVE-2026-123633, and tests whether HTTP/2 is live on
+  the port as well as reading the version banner.
+keywords:
+  - nmap
+  - nse
+  - vulnerability-detection
+  - nginx
+  - http2
+  - cve-2026-123007
+  - cve-2026-123633
+license: MIT
