@@ -75,9 +75,9 @@ CVE-2026-123633 is never reported LIKELY VULNERABLE, because two of its conditio
 | By address, no server name | NOT VULNERABLE |
 | By address, `--script-args tls.servername=app.example.com` | LIKELY VULNERABLE |
 
-Same address, same port, opposite answers: the scan by address missed the exposed site. Scan each hostname you serve, or pass `tls.servername` when you only have an address. This is case 10 in the lab, and CI checks it on every push.
+Same address, same port, opposite answers: the scan by address missed the exposed site. Scan each hostname you serve, or pass `tls.servername` when you only have an address.
 
-**Pass `-Pn`.** It skips host discovery and scans the port regardless. Without it Nmap probes the host first and reports "Host seems down" when those probes are filtered, which is common on hardened and internet-facing servers. It changes no result: `lab/check-pn.sh` scans the lab both ways and compares every one, and CI runs it on every push. `scan.sh` passes it for you.
+**Pass `-Pn`.** It skips host discovery and scans the port regardless. Without it Nmap probes the host first and reports "Host seems down" when those probes are filtered, which is common on hardened and internet-facing servers. It changes no result, only whether the scan happens at all. `scan.sh` passes it for you.
 
 **Scan the origin, not what sits in front of it.** A CDN, load balancer or WAF supplies its own banner and terminates TLS, so the check would be reading the front end rather than NGINX.
 
