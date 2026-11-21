@@ -85,7 +85,7 @@ Same address, same port, opposite answers: the scan by address missed the expose
 
 ## 2. Learn how a check works
 
-[`lab/nginx2root`](lab/nginx2root) runs **ten deliberately vulnerable NGINX containers**, giving **eleven test cases**: one container serves two virtual hosts and is scanned twice, once by address and once with a server name.
+[`lab/nginx2root`](lab/nginx2root) runs **eleven deliberately vulnerable NGINX containers**, giving **twelve test cases**: one container serves two virtual hosts and is scanned twice, once by address and once with a server name.
 
 The check reports LIKELY VULNERABLE only when two things hold at once: the version is in an affected range, and HTTP/2 is on for the port and name scanned. The lab isolates each one.
 
@@ -93,7 +93,12 @@ The check reports LIKELY VULNERABLE only when two things hold at once: the versi
 
 **Cases 1 and 6** both have HTTP/2 on and differ only in version, affected 1.31.8 against fixed 1.30.7. They return LIKELY VULNERABLE and NOT VULNERABLE, so the check is not just reporting that HTTP/2 is enabled.
 
-The remaining cases cover what a scan cannot resolve: a hidden version, a TLS 1.3 listener that conceals the protocol choice, and a port whose answer depends on which virtual host is addressed.
+The remaining cases cover what a scan cannot resolve:
+
+- a hidden version
+- a TLS 1.3 listener that conceals the protocol choice
+- a port whose answer depends on which virtual host is addressed
+- a host that proxies to a backend, which reports the same as one that does not
 
 ```sh
 cd lab/nginx2root && ./gen-cert.sh && docker compose up -d && cd -

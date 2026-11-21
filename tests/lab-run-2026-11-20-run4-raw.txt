@@ -1,6 +1,6 @@
 ======================================================================
 nginx2root lab results
-Generated 2026-11-20 18:48:30 UTC
+Generated 2026-11-21 03:01:26 UTC
 ======================================================================
 
 ENVIRONMENT
@@ -10,25 +10,26 @@ ENVIRONMENT
   Check                  nse/http-vuln-cve2026-123007.nse
   Check sha256           0c7d1aa0f85c9312906f8dc28e7354f5d16d315c3266f9e3210bcfea8a51970e
   Cases                  lab/nginx2root/cases.tsv
-  Scan arguments         nmap -Pn -n -sT -sV --version-light -p 8080,8441,8442,8443,8444,8445,8446,8448,8449,8450 --script nse/http-vuln-cve2026-123007.nse --script-args vulns.showall 127.0.0.1
+  Scan arguments         nmap -Pn -n -sT -sV --version-light -p 8080,8441,8442,8443,8444,8445,8446,8448,8449,8450,8451 --script nse/http-vuln-cve2026-123007.nse --script-args vulns.showall 127.0.0.1
 
 RESULTS
-  case  port  nginx   config                             scan args                       expect 123007      actual 123007      expect 123633   actual 123633   match
-  ----  ----  ------  ---------------------------------  ------------------------------  -----------------  -----------------  --------------  --------------  -----
-  1     8441  1.31.8  TLS, HTTP/2 on                     none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
-  2     8442  1.31.9  TLS, HTTP/2 on                     none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
-  3     8443  1.31.8  TLS, HTTP/2 off                    none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
-  4     8444  1.31.8  TLS, HTTP/2 on, server_tokens off  none                            UNKNOWN            UNKNOWN            UNKNOWN         UNKNOWN         yes
-  5     8445  1.30.6  TLS, HTTP/2 on                     none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
-  6     8446  1.30.7  TLS, HTTP/2 on                     none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
-  7     8080  1.31.8  Cleartext, http2 on                none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
-  8     8448  1.31.8  TLS, ECDHE AEAD ciphers only       none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
-  9     8449  1.31.8  TLS 1.3 only                       none                            UNKNOWN            UNKNOWN            UNKNOWN         UNKNOWN         yes
-  10a   8450  1.31.8  two vhosts, scanned by IP          none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
-  10b   8450  1.31.8  two vhosts, server name sent       tls.servername=app.example.com  LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  case  port  nginx   config                                scan args                       expect 123007      actual 123007      expect 123633   actual 123633   match
+  ----  ----  ------  ------------------------------------  ------------------------------  -----------------  -----------------  --------------  --------------  -----
+  1     8441  1.31.8  TLS, HTTP/2 on                        none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  2     8442  1.31.9  TLS, HTTP/2 on                        none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
+  3     8443  1.31.8  TLS, HTTP/2 off                       none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
+  4     8444  1.31.8  TLS, HTTP/2 on, server_tokens off     none                            UNKNOWN            UNKNOWN            UNKNOWN         UNKNOWN         yes
+  5     8445  1.30.6  TLS, HTTP/2 on                        none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  6     8446  1.30.7  TLS, HTTP/2 on                        none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
+  7     8080  1.31.8  Cleartext, http2 on                   none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  8     8448  1.31.8  TLS, ECDHE AEAD ciphers only          none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  9     8449  1.31.8  TLS 1.3 only                          none                            UNKNOWN            UNKNOWN            UNKNOWN         UNKNOWN         yes
+  10a   8450  1.31.8  two vhosts, scanned by IP             none                            NOT VULNERABLE     NOT VULNERABLE     NOT VULNERABLE  NOT VULNERABLE  yes
+  10b   8450  1.31.8  two vhosts, server name sent          tls.servername=app.example.com  LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
+  11    8451  1.31.8  TLS, HTTP/2 on, proxies to a backend  none                            LIKELY VULNERABLE  LIKELY VULNERABLE  UNKNOWN         UNKNOWN         yes
 
 SUMMARY
-  11 of 11 cases matched the expected results.
+  12 of 12 cases matched the expected results.
 
 SERVICE DETECTION
   port  service       cpe
@@ -43,13 +44,14 @@ SERVICE DETECTION
   8448  nginx 1.31.8  cpe:/a:igor_sysoev:nginx:1.31.8
   8449  nginx 1.31.8  cpe:/a:igor_sysoev:nginx:1.31.8
   8450  nginx 1.31.8  cpe:/a:igor_sysoev:nginx:1.31.8
+  8451  nginx 1.31.8  cpe:/a:igor_sysoev:nginx:1.31.8
 
 ----------------------------------------------------------------------
 FULL NMAP OUTPUT
 ----------------------------------------------------------------------
-Starting Nmap 7.993 ( https://nmap.org ) at 2026-11-20 18:48 +0000
+Starting Nmap 7.993 ( https://nmap.org ) at 2026-11-21 03:01 +0000
 Nmap scan report for 127.0.0.1
-Host is up (0.00042s latency).
+Host is up (0.00044s latency).
 
 PORT     STATE SERVICE  VERSION
 8080/tcp open  http     nginx 1.31.8
@@ -77,9 +79,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8441/tcp open  ssl/http nginx 1.31.8
 | http-vuln-cve2026-123007: 
 |   VULNERABLE:
@@ -105,9 +107,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8442/tcp open  ssl/http nginx 1.31.9
 | http-vuln-cve2026-123007: 
 |   NOT VULNERABLE:
@@ -123,9 +125,9 @@ PORT     STATE SERVICE  VERSION
 |     State: NOT VULNERABLE
 |     IDs:  CVE:CVE-2026-123633
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8443/tcp open  ssl/http nginx 1.31.8
 | http-vuln-cve2026-123007: 
 |   NOT VULNERABLE:
@@ -141,9 +143,9 @@ PORT     STATE SERVICE  VERSION
 |     State: NOT VULNERABLE
 |     IDs:  CVE:CVE-2026-123633
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8444/tcp open  ssl/http nginx
 | http-vuln-cve2026-123007: 
 |   VULNERABLE:
@@ -169,9 +171,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8445/tcp open  ssl/http nginx 1.30.6
 | http-vuln-cve2026-123007: 
 |   VULNERABLE:
@@ -197,9 +199,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8446/tcp open  ssl/http nginx 1.30.7
 | http-vuln-cve2026-123007: 
 |   NOT VULNERABLE:
@@ -215,9 +217,9 @@ PORT     STATE SERVICE  VERSION
 |     State: NOT VULNERABLE
 |     IDs:  CVE:CVE-2026-123633
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8448/tcp open  ssl/http nginx 1.31.8
 | http-vuln-cve2026-123007: 
 |   VULNERABLE:
@@ -243,9 +245,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8449/tcp open  ssl/http nginx 1.31.8
 | http-vuln-cve2026-123007: 
 |   VULNERABLE:
@@ -271,9 +273,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 8450/tcp open  ssl/http nginx 1.31.8
 | http-vuln-cve2026-123007: 
 |   NOT VULNERABLE:
@@ -289,15 +291,43 @@ PORT     STATE SERVICE  VERSION
 |     State: NOT VULNERABLE
 |     IDs:  CVE:CVE-2026-123633
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
-|_      https://www.cve.org/CVERecord?id=CVE-2026-123633
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
+8451/tcp open  ssl/http nginx 1.31.8
+| http-vuln-cve2026-123007: 
+|   VULNERABLE:
+|   NGINX HTTP/2 flow control memory corruption (nginx2root)
+|     State: LIKELY VULNERABLE
+|     IDs:  CVE:CVE-2026-123007
+|     Risk factor: High
+|       NGINX 1.31.8 negotiated HTTP/2 (h2 via TLS ALPN). Affected range for this CVE: 1.9.5 to 1.30.6 and 1.31.0 to 1.31.8. Fixed in 1.30.7 and 1.31.9.
+|     Disclosure date: 2026-11-18
+|     Extra information:
+|       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
+|     References:
+|       https://nginx.org/en/security_advisories.html
+|       https://www.cve.org/CVERecord?id=CVE-2026-123007
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123007
+|   
+|   NGINX HTTP/2 use-after-free (nginx2root)
+|     State: UNKNOWN (unable to test)
+|     IDs:  CVE:CVE-2026-123633
+|     Risk factor: High
+|       NGINX 1.31.8 negotiated HTTP/2 (h2 via TLS ALPN). Exploitation also needs NGINX proxying requests to a backend and a worker process running short of worker_connections; this check cannot see either from the network. Affected range for this CVE: 1.19.7 to 1.30.6 and 1.31.0 to 1.31.8. Fixed in 1.30.7 and 1.31.9.
+|     Disclosure date: 2026-11-18
+|     Extra information:
+|       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
+|     References:
+|       https://nginx.org/en/security_advisories.html
+|       https://www.cve.org/CVERecord?id=CVE-2026-123633
+|_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 12.13 seconds
-Starting Nmap 7.993 ( https://nmap.org ) at 2026-11-20 18:48 +0000
+Nmap done: 1 IP address (1 host up) scanned in 12.16 seconds
+Starting Nmap 7.993 ( https://nmap.org ) at 2026-11-21 03:01 +0000
 Nmap scan report for 127.0.0.1
-Host is up (0.00017s latency).
+Host is up (0.00016s latency).
 
 PORT     STATE SERVICE  VERSION
 8450/tcp open  ssl/http nginx 1.31.8
@@ -312,9 +342,9 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://www.cve.org/CVERecord?id=CVE-2026-123007
 |       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123007
 |       https://nginx.org/en/security_advisories.html
+|       https://www.cve.org/CVERecord?id=CVE-2026-123007
 |   
 |   NGINX HTTP/2 use-after-free (nginx2root)
 |     State: UNKNOWN (unable to test)
@@ -325,12 +355,12 @@ PORT     STATE SERVICE  VERSION
 |     Extra information:
 |       Version taken from the Server header; backported distribution fixes are not visible to this check. Restart NGINX after upgrading.
 |     References:
-|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |       https://nginx.org/en/security_advisories.html
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-123633
 |_      https://www.cve.org/CVERecord?id=CVE-2026-123633
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 11.12 seconds
+Nmap done: 1 IP address (1 host up) scanned in 11.11 seconds
 
 ======================================================================
 APPENDIX: supporting checks

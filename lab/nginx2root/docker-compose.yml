@@ -62,6 +62,12 @@ services:
     ports: ["127.0.0.1:8449:443"]
     volumes: ["./certs:/certs:ro", "./conf/case9.conf:/etc/nginx/conf.d/default.conf:ro"]
 
+  case11:  # 1.31.8, HTTP/2 on, proxies to a backend -> same as case 1
+    <<: *nginx
+    image: nginx:1.31.8
+    ports: ["127.0.0.1:8451:443"]
+    volumes: ["./certs:/certs:ro", "./conf/case11.conf:/etc/nginx/conf.d/default.conf:ro"]
+
   case10:  # 1.31.8, two vhosts on one port       -> depends on the server name sent
     <<: *nginx
     image: nginx:1.31.8

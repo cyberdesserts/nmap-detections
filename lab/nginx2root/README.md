@@ -1,6 +1,6 @@
 # nginx2root lab
 
-Ten NGINX containers giving eleven test cases for `nse/http-vuln-cve2026-123007.nse`: case 10 serves two virtual hosts from one container and is scanned twice. Ports bind to 127.0.0.1 only. Every container on an affected version is deliberately vulnerable, so keep it off any network you do not control.
+Eleven NGINX containers giving twelve test cases for `nse/http-vuln-cve2026-123007.nse`: case 10 serves two virtual hosts from one container and is scanned twice. Ports bind to 127.0.0.1 only. Every container on an affected version is deliberately vulnerable, so keep it off any network you do not control.
 
 Needs Docker, Nmap and python3. `lab/run-tests.sh` compares every case against `cases.tsv` and exits non-zero if any one does not match.
 
@@ -25,6 +25,7 @@ cd lab/nginx2root && docker compose down
 | 9 | 8449 | 1.31.8 | TLS 1.3 only | UNKNOWN | UNKNOWN |
 | 10a | 8450 | 1.31.8 | Two vhosts, scanned by address | NOT VULNERABLE | NOT VULNERABLE |
 | 10b | 8450 | 1.31.8 | Two vhosts, `tls.servername=app.example.com` | LIKELY VULNERABLE | UNKNOWN |
+| 11 | 8451 | 1.31.8 | TLS, HTTP/2 on, proxies to a backend | LIKELY VULNERABLE | UNKNOWN |
 
 ## What each case covers
 
@@ -43,6 +44,7 @@ It reports **LIKELY VULNERABLE** only when both are met and both could be read. 
 | 5 | Yes, 1.30.6 | On | LIKELY VULNERABLE |
 | 7 | Yes, 1.31.8 | On, cleartext | LIKELY VULNERABLE |
 | 8 | Yes, 1.31.8 | On | LIKELY VULNERABLE |
+| 11 | Yes, 1.31.8 | On | LIKELY VULNERABLE |
 | 3 | Yes, 1.31.8 | **Off** | NOT VULNERABLE |
 | 2 | **No, 1.31.9 is fixed** | On | NOT VULNERABLE |
 | 6 | **No, 1.30.7 is fixed** | On | NOT VULNERABLE |
@@ -81,7 +83,11 @@ One container, two server blocks on one port: the default with HTTP/2 off, `app.
 
 ## CVE-2026-123633
 
-Wherever CVE-2026-123007 is LIKELY VULNERABLE, CVE-2026-123633 is UNKNOWN. It needs two further conditions that a scan cannot see: NGINX proxying to a backend, and a worker process short of `worker_connections`. No config here proxies to a backend.
+Wherever CVE-2026-123007 is LIKELY VULNERABLE, CVE-2026-123633 is UNKNOWN. It needs two conditions beyond the two the check reads: NGINX proxying to a backend, and a worker process short of `worker_connections`. Neither is visible to a client.
+
+**Case 11 shows why that matters.** It is case 1 with one difference, a `proxy_pass` to a backend, so one of those further conditions is met. The check returns the same two states for both ports. A client cannot tell them apart, so reporting LIKELY VULNERABLE for CVE-2026-123633 would be a guess rather than a finding.
+
+The conditions themselves come from F5, which assigned both CVEs. The wording is quoted in [`tests/`](../../tests).
 
 ## Images
 

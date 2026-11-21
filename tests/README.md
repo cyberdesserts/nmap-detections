@@ -1,6 +1,6 @@
 # Test results
 
-All results here are from **Nmap 7.993** (Homebrew, arm64) on macOS, against the ten NGINX containers in `lab/nginx2root`, every port bound to 127.0.0.1. Docker 29.8.0, Docker Compose v5.5.1. Run date: 20 November 2026.
+All results here are from **Nmap 7.993** (Homebrew, arm64) on macOS, against the eleven NGINX containers in `lab/nginx2root`, every port bound to 127.0.0.1. Docker 29.8.0, Docker Compose v5.5.1. Run date: 20 November 2026.
 
 Eleven cases over ten containers: case 10 serves two virtual hosts from one container and is scanned twice, once by address and once with a server name.
 
@@ -14,7 +14,7 @@ All four tags are on Docker Hub. Each was checked with `nginx -v` inside the ima
 
 | Tag | Cases |
 |---|---|
-| `nginx:1.31.8` | 1, 3, 4, 7, 8, 9, 10 |
+| `nginx:1.31.8` | 1, 3, 4, 7, 8, 9, 10, 11 |
 | `nginx:1.31.9` | 2 |
 | `nginx:1.30.6` | 5 |
 | `nginx:1.30.7` | 6 |
@@ -36,8 +36,9 @@ The 1.31.8 image is built with `--with-http_ssl_module`, `--with-http_v2_module`
 | 9 | 8449 | 1.31.8 | TLS 1.3 only | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | Yes |
 | 10a | 8450 | 1.31.8 | Two vhosts, scanned by address | NOT VULNERABLE | NOT VULNERABLE | NOT VULNERABLE | NOT VULNERABLE | Yes |
 | 10b | 8450 | 1.31.8 | Two vhosts, `tls.servername=app.example.com` | LIKELY VULNERABLE | LIKELY VULNERABLE | UNKNOWN | UNKNOWN | Yes |
+| 11 | 8451 | 1.31.8 | TLS, HTTP/2 on, proxies to a backend | LIKELY VULNERABLE | LIKELY VULNERABLE | UNKNOWN | UNKNOWN | Yes |
 
-All eleven matched. CVE-2026-123633 was reported LIKELY VULNERABLE zero times, because two of its conditions cannot be seen from the network (see below).
+All twelve matched. CVE-2026-123633 was reported LIKELY VULNERABLE zero times, because two of its conditions cannot be seen from the network (see below).
 
 Detection-only properties checked against the script used: categories `{"vuln", "safe"}`; the only traffic is one HTTP GET, one TLS ClientHello, or the HTTP/2 connection preface with an empty SETTINGS frame. It compiles under `luac -p`.
 
@@ -47,6 +48,7 @@ Detection-only properties checked against the script used: categories `{"vuln", 
 - **Case 7.** With `listen 80` and `http2 on`, NGINX 1.31.8 serves HTTP/1.1 normally (so the `Server` header is readable) and answers an HTTP/2 prior-knowledge preface with a SETTINGS frame on stream 0 (`000018040000000000`). It ignores an `Upgrade: h2c` request and answers HTTP/1.1, so the script uses prior knowledge, not Upgrade.
 - **Case 8** completed the handshake and read `h2` against a server that allows only ECDHE with AEAD ciphers.
 - **Case 9** is TLS 1.3 only and does negotiate `h2`, but the script's TLS 1.2 ClientHello draws a `protocol_version` alert, so ALPN is never seen and the result is UNKNOWN. This is the documented TLS 1.3 limitation.
+- **Case 11** is case 1 with one difference, a `proxy_pass` to a backend, so one of the two further conditions CVE-2026-123633 needs is met. Ports 8441 and 8451 return the same two states, confirming that proxying is not visible to a client and that UNKNOWN is the only honest answer for that CVE.
 - **Case 10** is one container with two server blocks on port 8450: the default with HTTP/2 off, `app.example.com` with it on. `openssl s_client` confirms the ground truth, selecting `http/1.1` with no server name and `h2` with `-servername app.example.com`. The two rows are the same port scanned twice, which is what the `args` column in `cases.tsv` carries. `app.example.com` is a documentation name from RFC 2606 and never resolves; NGINX chooses the server block from the TLS server name extension, so the case needs no DNS and runs unchanged on a CI runner.
 
 ## The banner-only comparison
