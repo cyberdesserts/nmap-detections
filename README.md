@@ -1,6 +1,6 @@
 # nmap-detections
 
-[![lab](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml/badge.svg)](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml)
+[![lab](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml/badge.svg)](https://github.com/cyberdesserts/nmap-detections/actions/workflows/lab.yml) [![scope: detection only](https://img.shields.io/badge/scope-detection%20only-informational)](SECURITY.md) [![licence: MIT](https://img.shields.io/github/license/cyberdesserts/nmap-detections)](LICENSE)
 
 Nmap NSE checks for newly disclosed vulnerabilities, written and tested by [CyberDesserts](https://blog.cyberdesserts.com/). Each check ships with a reproducible lab and the results it was tested against.
 
