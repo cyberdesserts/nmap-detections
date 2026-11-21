@@ -53,8 +53,14 @@ Limitations:
 
 ---
 -- @usage
--- nmap -p 80,443 --script http-vuln-cve2026-123007 <target>
--- nmap -p 443 --script http-vuln-cve2026-123007 --script-args vulns.showall <target>
+-- nmap -Pn -p 80,443 --script ./http-vuln-cve2026-123007.nse <target>
+-- nmap -Pn -p 443 --script ./http-vuln-cve2026-123007.nse --script-args vulns.showall <target>
+-- nmap -Pn -sV -p 8443 --script ./http-vuln-cve2026-123007.nse <target>
+--
+-- -Pn skips host discovery, which is filtered on many internet-facing hosts.
+-- -sV is needed on non-standard ports so the HTTP port rule matches.
+-- Scan by hostname: HTTP/2 is set per virtual host, so a scan by address
+-- reaches the default one.
 --
 -- @output
 -- PORT    STATE SERVICE

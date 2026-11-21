@@ -22,7 +22,7 @@ Reference material for the check published so far is in [the check in detail](#t
 
 **Scan only systems you own or have written authorisation to test.** Scanning someone else's infrastructure without permission is unlawful in many jurisdictions, including under the UK Computer Misuse Act 1990. A detection check is still a scan.
 
-Two ways to run the same check. Option A needs Nmap and python3; option B needs Nmap alone. Tested on Nmap 7.993.
+Two ways to run the same check. Option A needs Nmap and python3; option B needs Nmap alone. Tested on Nmap 7.993, and on 7.98 in continuous integration.
 
 ### Option A: the wrapper
 
@@ -60,11 +60,21 @@ Read the `State:` line, **not** the `VULNERABLE:` heading above it. Nmap's `vuln
 
 | State | What it means and what to do |
 |---|---|
-| LIKELY VULNERABLE | Affected version, and HTTP/2 negotiated on this port and name. Upgrade to 1.30.7 or 1.31.9 and **restart**: a reload leaves the old binary running |
+| LIKELY VULNERABLE | Affected version, and HTTP/2 negotiated on this port and name. Upgrade to 1.30.7 or 1.31.9 and **restart**: a reload leaves the old binary running. Check your distribution's advisory first, since backported fixes keep the old version string |
 | NOT VULNERABLE | Fixed version, or HTTP/2 not offered for the name scanned. Other names on the same port can differ |
 | UNKNOWN | A condition could not be seen from the network. Not a clean bill of health: confirm on the host with `nginx -v` and `nginx -T` |
 
 CVE-2026-123633 is never reported LIKELY VULNERABLE, because two of its conditions are invisible to a scan. The same upgrade fixes both CVEs.
+
+### What LIKELY VULNERABLE does not tell you
+
+It confirms two things: the banner reports an affected version, and HTTP/2 is live on the port and name scanned. It does not tell you the host can be exploited.
+
+- **The version came from a banner.** Debian, Ubuntu and others backport fixes without changing it, so a patched package still reports an affected version. Check your distribution's advisory before raising a finding.
+- **Reaching the flaw is not the same as exploiting it.** F5 gives the impact of CVE-2026-123007 as a crash of the NGINX worker process, or corruption of its memory. Code execution is possible only "on systems with Address Space Layout Randomization (ASLR) disabled or when the attacker can bypass ASLR".
+- **CVE-2026-123633 needs more than the check can see**, and no scan can see it: NGINX proxying to a backend, and a worker process running short of `worker_connections`.
+
+Read LIKELY VULNERABLE as "this host is in scope for the patch", not as "this host is exploitable today".
 
 ### Getting an accurate answer
 
@@ -91,7 +101,7 @@ The check reports LIKELY VULNERABLE only when two things hold at once: the versi
 
 **Cases 1 and 3** run the same version, 1.31.8, and differ only in HTTP/2. They return LIKELY VULNERABLE and NOT VULNERABLE. `nmap -sV` reports identical product, version and CPE for both, so a check reading the version alone must give them the same answer and is wrong about one.
 
-**Cases 1 and 6** both have HTTP/2 on and differ only in version, affected 1.31.8 against fixed 1.30.7. They return LIKELY VULNERABLE and NOT VULNERABLE, so the check is not just reporting that HTTP/2 is enabled.
+**Cases 1 and 2** both have HTTP/2 on and differ only in the fix, 1.31.8 against 1.31.9 on the same mainline branch. They return LIKELY VULNERABLE and NOT VULNERABLE, so the check is not just reporting that HTTP/2 is enabled. Cases 5 and 6 are the same pair on the stable branch, 1.30.6 against 1.30.7.
 
 The remaining cases cover what a scan cannot resolve:
 
