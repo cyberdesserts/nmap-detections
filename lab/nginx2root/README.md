@@ -28,21 +28,56 @@ cd lab/nginx2root && docker compose down
 
 ## What each case covers
 
-**Cases 1, 2, 3 and 6: the two conditions.** Case 1 is affected 1.31.8 with HTTP/2 on, so both conditions hold. Case 3 is the same version with HTTP/2 off, and case 6 is fixed 1.30.7 with HTTP/2 on, so each drops one condition. Case 2 is fixed 1.31.9 on the mainline branch.
+The check reads two conditions from the network:
 
-Case 3 is the one a version-only check misreports. Its banner is identical to case 1, so a check reading the version alone flags a port that neither CVE can be reached through.
+1. Is the version in an affected range?
+2. Is HTTP/2 on for the port and name scanned?
 
-**Case 4: hidden version.** `server_tokens off` leaves the banner reading `nginx` with no number, so the version cannot be placed in or out of range.
+It reports **LIKELY VULNERABLE** only when both are met and both could be read. If a condition could be read and is not met, the answer is **NOT VULNERABLE**. If a condition could not be read at all, the answer is **UNKNOWN**.
 
-**Case 5: the stable branch.** 1.30.6 is the last affected stable release, where 1.31.8 is the last affected mainline one.
+### Both conditions readable
 
-**Case 7: cleartext.** With `http2 on` and no TLS, NGINX 1.31.8 answers both HTTP/1.1 and an HTTP/2 prior-knowledge preface on the same port. It ignores `Upgrade: h2c`, so the check uses prior knowledge instead.
+| Case | Version in range | HTTP/2 | Result |
+|---|---|---|---|
+| 1 | Yes, 1.31.8 | On | LIKELY VULNERABLE |
+| 5 | Yes, 1.30.6 | On | LIKELY VULNERABLE |
+| 7 | Yes, 1.31.8 | On, cleartext | LIKELY VULNERABLE |
+| 8 | Yes, 1.31.8 | On | LIKELY VULNERABLE |
+| 3 | Yes, 1.31.8 | **Off** | NOT VULNERABLE |
+| 2 | **No, 1.31.9 is fixed** | On | NOT VULNERABLE |
+| 6 | **No, 1.30.7 is fixed** | On | NOT VULNERABLE |
 
-**Case 8: modern ciphers.** The server accepts only ECDHE with AEAD ciphers. The check's own cipher list is accepted, so the ALPN answer is read.
+The bold cell is the condition that fails. Case 3 fails on HTTP/2, cases 2 and 6 on the version.
 
-**Case 9: TLS 1.3 only.** The protocol chosen by ALPN travels in encrypted extensions, so the check cannot see it and reports UNKNOWN. The port does negotiate HTTP/2.
+### A condition cannot be read
 
-**Case 10: virtual hosts.** One container, two server blocks on one port: the default with HTTP/2 off, `app.example.com` with it on. Scanned by address the default answers; scanned with `tls.servername` the named one does. The same port appears twice in `cases.tsv`, which is what its `args` column is for. `app.example.com` is a documentation name from RFC 2606 and never resolves, because NGINX selects the server block from the TLS server name extension rather than from DNS.
+| Case | What cannot be read | Result |
+|---|---|---|
+| 4 | The version. `server_tokens off` leaves the banner reading `nginx` with no number | UNKNOWN |
+| 9 | HTTP/2. TLS 1.3 carries the chosen protocol in encrypted extensions, so ALPN is not visible | UNKNOWN |
+
+UNKNOWN is not a clean bill of health. Case 9 does negotiate HTTP/2. The check cannot see it.
+
+### The answer depends on how the port is scanned
+
+| Case | How it was scanned | Result |
+|---|---|---|
+| 10a | By address, no server name | NOT VULNERABLE |
+| 10b | With `tls.servername=app.example.com` | LIKELY VULNERABLE |
+
+One container, two server blocks on one port: the default with HTTP/2 off, `app.example.com` with it on. The same port appears twice in `cases.tsv`, which is what its `args` column is for. `app.example.com` is a documentation name from RFC 2606 and never resolves, because NGINX selects the server block from the TLS server name extension rather than from DNS.
+
+### Why these cases
+
+**Case 3** is the one a version-only check misreports. Its banner is identical to case 1, so a check reading the version alone flags a port that neither CVE can be reached through.
+
+**Cases 2 and 6** are the opposite control. Both run a fixed version with HTTP/2 on, so a check reporting whenever HTTP/2 is enabled would flag them.
+
+**Case 5** covers the stable branch: 1.30.6 is the last affected stable release, where 1.31.8 is the last affected mainline one.
+
+**Case 7** is cleartext. With `http2 on` and no TLS, NGINX 1.31.8 answers both HTTP/1.1 and an HTTP/2 prior-knowledge preface on the same port. It ignores `Upgrade: h2c`, so the check uses prior knowledge instead.
+
+**Case 8** accepts only ECDHE with AEAD ciphers. The check sends its own cipher list rather than relying on the installed Nmap's default, so the handshake completes and ALPN is read.
 
 ## CVE-2026-123633
 
