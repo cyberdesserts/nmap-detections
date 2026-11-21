@@ -1,6 +1,6 @@
 # nginx2root lab
 
-Ten NGINX containers, one per test case for `nse/http-vuln-cve2026-123007.nse`. Ports bind to 127.0.0.1 only. Every container on an affected version is deliberately vulnerable, so keep it off any network you do not control.
+Ten NGINX containers giving eleven test cases for `nse/http-vuln-cve2026-123007.nse`: case 10 serves two virtual hosts from one container and is scanned twice. Ports bind to 127.0.0.1 only. Every container on an affected version is deliberately vulnerable, so keep it off any network you do not control.
 
 Needs Docker, Nmap and python3. `lab/run-tests.sh` compares every case against `cases.tsv` and exits non-zero if any one does not match.
 

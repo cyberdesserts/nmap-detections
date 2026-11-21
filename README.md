@@ -6,29 +6,39 @@ Nmap NSE checks for newly disclosed vulnerabilities, written and tested by [Cybe
 
 Every check here is **detection only**. None sends an exploit, malformed input or anything intended to trigger the flaw it looks for.
 
-## Scan your own servers
+**Three things you can do here:**
 
-**Scan only systems you own or have written authorisation to test.** Scanning
-someone else's infrastructure without permission is unlawful in many
-jurisdictions, including under the UK Computer Misuse Act 1990. A detection
-check is still a scan.
+| | What | Who it is for |
+|---|---|---|
+| **1** | [Scan your own servers](#1-scan-your-own-servers) | Run a check against your own infrastructure, now |
+| **2** | [Learn how a check works](#2-learn-how-a-check-works) | Spin up deliberately vulnerable containers and watch the check decide |
+| **3** | [Write a check for another CVE](#3-write-a-check-for-another-cve) | Start from a template and its lab skeleton |
 
-Two ways to run the same check. Option 1 needs Nmap and python3. Option 2
-needs Nmap alone. Tested on Nmap 7.993.
+Reference material for the check published so far is in [the check in detail](#the-check-in-detail).
 
-**Option 1, the wrapper.** Clone the repository and run:
+---
+
+## 1. Scan your own servers
+
+**Scan only systems you own or have written authorisation to test.** Scanning someone else's infrastructure without permission is unlawful in many jurisdictions, including under the UK Computer Misuse Act 1990. A detection check is still a scan.
+
+Two ways to run the same check. Option A needs Nmap and python3; option B needs Nmap alone. Tested on Nmap 7.993.
+
+### Option A: the wrapper
+
+Clone the repository, then:
 
 ```sh
 ./scan.sh www.example.com                   # defaults to ports 80,443
 ./scan.sh www.example.com 80,443,8443       # pick the ports
-./scan.sh 10.0.0.5 443 app.example.com      # scanning by IP, name the vhost
+./scan.sh 10.0.0.5 443 app.example.com      # scanning by address, name the vhost
 ```
 
-It prints a findings table, a summary and what to do next. It is only a
-convenience wrapper around option 2.
+It prints a findings table, a summary and what to do next.
 
-**Option 2, Nmap on its own.** The check is one file with no dependencies
-beyond Nmap itself, so this works anywhere Nmap runs:
+### Option B: Nmap on its own
+
+The check is one file with no dependencies beyond Nmap, so this works anywhere Nmap runs:
 
 ```sh
 curl -O https://raw.githubusercontent.com/cyberdesserts/nmap-detections/main/nse/http-vuln-cve2026-123007.nse
@@ -44,35 +54,58 @@ nmap -Pn -p 443 --script ./http-vuln-cve2026-123007.nse \
 nmap -Pn -sV -p 8443 --script ./http-vuln-cve2026-123007.nse www.example.com
 ```
 
-Read the `State:` line, not the `VULNERABLE:` heading above it: Nmap's `vulns`
-library prints UNKNOWN results under that heading too.
+### Reading the result
 
-### Scan by hostname, not by IP
+Read the `State:` line, **not** the `VULNERABLE:` heading above it. Nmap's `vulns` library prints UNKNOWN results under that heading too.
 
-An IP address works, but it selects the server's default virtual host, and
-HTTP/2 is set per virtual host. A scan by IP can therefore clear a host whose
-other names are exposed. Measured against two virtual hosts on one address and
-port, the default with HTTP/2 off and `app.example.com` with it on:
+| State | What it means and what to do |
+|---|---|
+| LIKELY VULNERABLE | Affected version, and HTTP/2 negotiated on this port and name. Upgrade to 1.30.7 or 1.31.9 and **restart**: a reload leaves the old binary running |
+| NOT VULNERABLE | Fixed version, or HTTP/2 not offered for the name scanned. Other names on the same port can differ |
+| UNKNOWN | A condition could not be seen from the network. Not a clean bill of health: confirm on the host with `nginx -v` and `nginx -T` |
+
+CVE-2026-123633 is never reported LIKELY VULNERABLE, because two of its conditions are invisible to a scan. The same upgrade fixes both CVEs.
+
+### Getting an accurate answer
+
+**Scan by hostname, not by address.** An address works, but it selects the server's default virtual host, and HTTP/2 is set per virtual host. Measured against two virtual hosts on one address and port, the default with HTTP/2 off and `app.example.com` with it on:
 
 | How it was scanned | Result |
 |---|---|
-| By IP, no server name | NOT VULNERABLE |
-| By IP, `--script-args tls.servername=app.example.com` | LIKELY VULNERABLE |
+| By address, no server name | NOT VULNERABLE |
+| By address, `--script-args tls.servername=app.example.com` | LIKELY VULNERABLE |
 
-Same address, same port, opposite answers. The scan by IP missed the exposed
-site. Scan each hostname you serve, or pass `tls.servername` when you have to
-work from an address. This is case 10 in the lab, and CI checks it on every
-push.
+Same address, same port, opposite answers: the scan by address missed the exposed site. Scan each hostname you serve, or pass `tls.servername` when you only have an address. This is case 10 in the lab, and CI checks it on every push.
 
-### Why `-Pn`
+**Pass `-Pn`.** It skips host discovery and scans the port regardless. Without it Nmap probes the host first and reports "Host seems down" when those probes are filtered, which is common on hardened and internet-facing servers. It changes no result: `lab/check-pn.sh` scans the lab both ways and compares every one, and CI runs it on every push. `scan.sh` passes it for you.
 
-`-Pn` skips host discovery and scans the port regardless. Without it Nmap
-probes the host first and reports "Host seems down" if those probes are
-filtered, which is common on hardened and internet-facing servers. Against a
-host that does answer it changes nothing: `lab/check-pn.sh` scans the lab both
-ways and compares every result, and CI runs it on every push. It costs nothing
-either, the same time to within a tenth of a second over three runs each way,
-though that is a measurement rather than a test. `scan.sh` passes it for you.
+**Scan the origin, not what sits in front of it.** A CDN, load balancer or WAF supplies its own banner and terminates TLS, so the check would be reading the front end rather than NGINX.
+
+---
+
+## 2. Learn how a check works
+
+[`lab/nginx2root`](lab/nginx2root) runs **ten deliberately vulnerable NGINX containers**, giving **eleven test cases**: one container serves two virtual hosts and is scanned twice, once by address and once with a server name.
+
+The point of the lab is that every case has a known right answer before the check runs. One case is an affected version with HTTP/2 switched off, another is the fixed version with it on. Those two are exactly what a check matching on the version banner alone gets wrong, and watching it happen takes less time than reading about it.
+
+```sh
+cd lab/nginx2root && ./gen-cert.sh && docker compose up -d && cd -
+lab/run-tests.sh nse/http-vuln-cve2026-123007.nse lab/nginx2root/cases.tsv
+cd lab/nginx2root && docker compose down
+```
+
+The expected result for every case is in [`lab/nginx2root/cases.tsv`](lab/nginx2root/cases.tsv), and the command exits non-zero if any case disagrees with it. Recorded results, including what the same ports look like to a version-only check, are in [`tests/`](tests).
+
+Needs Docker, Nmap and python3. Every port binds to 127.0.0.1, and the containers run unpatched builds, so keep them off any network you do not control.
+
+---
+
+## 3. Write a check for another CVE
+
+[`templates/`](templates) holds a check template with four marked edit blocks, a four-case lab skeleton that needs no certificate, and the four questions an advisory has to answer before a network check is possible at all.
+
+---
 
 ## Checks
 
@@ -80,7 +113,7 @@ though that is a measurement rather than a test. `scan.sh` passes it for you.
 |---|---|---|---|
 | [`nse/http-vuln-cve2026-123007.nse`](nse/http-vuln-cve2026-123007.nse) | nginx2root HTTP/2 flaws in NGINX Open Source: CVE-2026-123007 and CVE-2026-123633 | Nmap NSE | [`lab/nginx2root`](lab/nginx2root) |
 
-## http-vuln-cve2026-123007.nse
+## The check in detail
 
 ### What it checks
 
@@ -104,17 +137,12 @@ Both flaws are reachable only where HTTP/2 is enabled. A version banner alone fl
 | Hidden | Negotiated or could not tell | UNKNOWN | UNKNOWN |
 | No | Any | NOT VULNERABLE | NOT VULNERABLE |
 
-The state is LIKELY VULNERABLE rather than VULNERABLE because the version comes from a banner. CVE-2026-123633 is never reported as LIKELY VULNERABLE, because two of its conditions cannot be checked from the network. The same upgrade fixes both.
+The state is LIKELY VULNERABLE rather than VULNERABLE because the version comes from a banner.
 
-Nmap's `vulns` library prints UNKNOWN results under a "VULNERABLE:" heading. Read the `State:` line, not the heading.
-
-### Usage
-
-Tested on Nmap 7.993. See [Scan your own servers](#scan-your-own-servers) for
-the two ways to run it. Further options:
+### Further options
 
 ```sh
-# Scanning by IP but need a specific virtual host
+# Scanning by address but need a specific virtual host
 nmap -Pn -p 443 --script ./nse/http-vuln-cve2026-123007.nse \
   --script-args tls.servername=app.example.com 10.0.0.5
 
@@ -124,8 +152,6 @@ nmap -Pn -p 443 --script ./nse/http-vuln-cve2026-123007.nse \
 ```
 
 To install it alongside the bundled scripts, copy it into your Nmap `scripts` directory and run `nmap --script-updatedb`.
-
-Scan only systems you own or are authorised to test.
 
 ### Limitations
 
@@ -140,12 +166,6 @@ Scan only systems you own or are authorised to test.
 
 Patching needs a full restart of NGINX. A configuration reload leaves the vulnerable binary running.
 
-### Testing
-
-[`lab/nginx2root`](lab/nginx2root) runs ten NGINX containers covering each branch of the table above, in eleven cases. Results are kept in [`tests/`](tests).
-
 ## Licence
 
 MIT. Free to use, modify and redistribute, with no warranty. See [LICENSE](LICENSE).
-
-The scripts call Nmap's own libraries (`http`, `tls`, `vulns`, `shortport`) but contain no code copied from Nmap's bundled scripts.
